@@ -68,7 +68,15 @@ namespace MBHistory
                 {
                     SettingsVisible = true;
                 }
-
+                
+                var spacing = ImGui.GetScrollY() == 0 ? 118.0f : 143.0f;
+                ImGui.SameLine(ImGui.GetWindowWidth()-spacing);
+                
+                if (ImGui.Button("Copy to clipboard"))
+                {
+                    ImGui.SetClipboardText(CurrentText);
+                }
+                
                 ImGui.Spacing();
 
                 ImGui.Text("Current selection:");
