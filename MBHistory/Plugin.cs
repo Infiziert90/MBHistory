@@ -9,8 +9,10 @@ using Dalamud.Game.ClientState;
 using ImGuiNET;
 using System;
 using System.Linq;
+using Dalamud.Logging;
 using Num = System.Numerics;
 using MBHistory.Attributes;
+using MBHistory.Data;
 
 
 namespace MBHistory
@@ -29,7 +31,7 @@ namespace MBHistory
         private ClientState clientState;
         
         private readonly PluginCommandManager<Plugin> commandManager;
-        
+        public HistoryList HistoryList;
         
         public Plugin(
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
@@ -42,7 +44,9 @@ namespace MBHistory
             this.Configuration = this.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             this.Configuration.Initialize(this.PluginInterface);
             
-            this.PluginUi = new PluginUI(this.Configuration);
+            this.HistoryList = new HistoryList(this.Configuration);
+            
+            this.PluginUi = new PluginUI(this.Configuration, HistoryList);
             
             GameNetwork.NetworkMessage += OnNetworkEvent;
             
@@ -87,9 +91,9 @@ namespace MBHistory
         {
             if (direction != NetworkMessageDirection.ZoneDown) return;
             if (!Data.IsDataReady) return;
+            if (Configuration.VerboseChatlog) PluginLog.Debug($"History: Opcode {opCode}");
             if (opCode != Data.ServerOpCodes["MarketBoardHistory"]) return;
             if (!Configuration.On) return;
-
             if (clientState?.LocalPlayer == null)
             {
                 TurnOff();
@@ -97,41 +101,20 @@ namespace MBHistory
                 return;
             }
             
-            if (Configuration.VerboseChatlog) Chat.Print(("History: MarketBoardHistory Event fired."));
-            
-            var clipboardString = "";
-            PluginUi.CurrentText = clipboardString;
-            
+            if (Configuration.VerboseChatlog) PluginLog.Debug("History: MarketBoardHistory Event fired.");
+
             var playerName = clientState.LocalPlayer.Name.ToString();
             var listing = MarketBoardHistory.Read(dataPtr);
-            foreach (var (item, i) in listing.HistoryListings.Select((value, i) => ( value, i )))
+            HistoryList.ResetAndUpdate(playerName);
+            foreach (var item in listing.HistoryListings)
             {
-                if (i >= Configuration.NumberToCheck) break;
-                if (Configuration.OnlySelf && item.BuyerName != playerName) continue;
-                
-                
-                var tmp = 
-                    $"{(Configuration.Buyer ? $"{item.BuyerName}\t" : "")}" +
-                    $"{(Configuration.Price ? $"{item.SalePrice.ToString()}\t" : "")}" +
-                    $"{(Configuration.Amount ? $"{item.Quantity.ToString()}\t" : "")}" +
-                    $"{(Configuration.Date ? $"{item.PurchaseTime:yyyy-MM-dd h:mm}" : "")}";
-                
-                if (tmp == "")
-                {
-                    Chat.PrintError("History: No include option selected, pls check your settings.");
-                    break;
-                }
-
-                if (tmp.EndsWith("\t")) tmp = tmp.Remove(tmp.Length - 1);
-                clipboardString += tmp + "\n";
-                
-                if (Configuration.VerboseChatlog) Chat.Print($"History: {tmp.Replace("\t", " | ")}");
+                HistoryList.Append(item);
             }
 
-            if (clipboardString == "") return;
+            if (!HistoryList.HasItems()) return;
+            HistoryList.Update();
             if (Configuration.Chatlog) Chat.Print("History: Copied clipboard.");
-            PluginUi.CurrentText = clipboardString;
-            ImGui.SetClipboardText(clipboardString);
+            ImGui.SetClipboardText(HistoryList.GetClipboardString());
         }
 
         private void TurnOff()

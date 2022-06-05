@@ -1,6 +1,8 @@
 ﻿using ImGuiNET;
 using System;
 using System.Numerics;
+using MBHistory.Data;
+using MBHistory.Gui;
 
 namespace MBHistory
 {
@@ -9,6 +11,7 @@ namespace MBHistory
     class PluginUI : IDisposable
     {
         private Configuration configuration;
+        private Table table;
 
         // this extra bool exists for ImGui, since you can't ref a property
         private bool visible = false;
@@ -24,15 +27,19 @@ namespace MBHistory
             get { return this.settingsVisible; }
             set { this.settingsVisible = value; }
         }
-
+        
+        private HistoryList _historyList;
         private int _currentNumber;
-        public string CurrentText = "";
+        private Vector4 redColor = new Vector4(0.980f, 0.245f, 0.245f,1.0f);
 
         // passing in the image here just for simplicityw
-        public PluginUI(Configuration configuration)
+        public PluginUI(Configuration configuration, HistoryList historyList)
         {
             this.configuration = configuration;
+            this.table = new Table(historyList);
+            
             this._currentNumber = configuration.NumberToCheck;
+            this._historyList = historyList;
         }
 
         public void Dispose()
@@ -60,8 +67,8 @@ namespace MBHistory
                 return;
             }
 
-            ImGui.SetNextWindowSize(new Vector2(375, 480), ImGuiCond.FirstUseEver);
-            ImGui.SetNextWindowSizeConstraints(new Vector2(375, 480), new Vector2(float.MaxValue, float.MaxValue));
+            ImGui.SetNextWindowSize(new Vector2(380, 480), ImGuiCond.FirstUseEver);
+            ImGui.SetNextWindowSizeConstraints(new Vector2(380, 480), new Vector2(float.MaxValue, float.MaxValue));
             if (ImGui.Begin("Easy MBHistory Overview", ref this.visible))
             {
                 if (ImGui.Button("Show Settings"))
@@ -69,24 +76,25 @@ namespace MBHistory
                     SettingsVisible = true;
                 }
                 
-                var spacing = ImGui.GetScrollY() == 0 ? 118.0f : 143.0f;
+                var spacing = ImGui.GetScrollMaxY() == 0 ? 118.0f : 132.0f;
                 ImGui.SameLine(ImGui.GetWindowWidth()-spacing);
                 
                 if (ImGui.Button("Copy to clipboard"))
                 {
-                    ImGui.SetClipboardText(CurrentText);
+                    ImGui.SetClipboardText(_historyList.GetClipboardString());
                 }
                 
                 ImGui.Spacing();
 
                 ImGui.Text("Current selection:");
-                ImGui.InputTextMultiline(
-                    "##copytext", 
-                    ref CurrentText, 
-                    99999, 
-                    new Vector2(ImGui.GetWindowWidth()-20.0f, 20 * 18.2f), 
-                    ImGuiInputTextFlags.ReadOnly
-                    );
+                if (!configuration.HasOptions)
+                {
+                    ImGui.TextColored(redColor, "Please select include options.");
+                }
+                else
+                {
+                    this.table.RenderTable(); 
+                }
             }
             ImGui.End();
         }
@@ -123,6 +131,8 @@ namespace MBHistory
                         {
                             this.configuration.OnlySelf = onlySelf;
                             this.configuration.Save();
+                            
+                            this._historyList.Update();
                         }
                         
                         var chatlog = this.configuration.Chatlog;
@@ -156,39 +166,46 @@ namespace MBHistory
                             {
                                 this.configuration.NumberToCheck = _currentNumber;
                                 this.configuration.Save();
+                                
+                                this._historyList.Update();
                             }
                         }
                         
                         ImGui.Dummy(new Vector2(0.0f, 5.0f));
                         ImGui.Text("Include:");
-                        ImGui.Dummy(new Vector2(0.0f, 5.0f));
                         
-                        var buyer = this.configuration.Buyer;
-                        if (ImGui.Checkbox("Buyer Name", ref buyer))
+                        if (!configuration.HasOptions)
                         {
-                            this.configuration.Buyer = buyer;
-                            this.configuration.Save();
+                            ImGui.TextColored(redColor, "Please select an option.");
                         }
+
+                        var check = false;
+                        var buyer = this.configuration.Buyer;
+                        if (ImGui.Checkbox("Buyer Name", ref buyer)) 
+                            check = true;
                 
                         var price = this.configuration.Price;
-                        if (ImGui.Checkbox("Sale Price", ref price))
-                        {
-                            this.configuration.Price = price;
-                            this.configuration.Save();
-                        }
+                        if (ImGui.Checkbox("Sale Price", ref price)) 
+                            check = true;
                 
                         var amount = this.configuration.Amount;
-                        if (ImGui.Checkbox("Quantity", ref amount))
-                        {
-                            this.configuration.Amount = amount;
-                            this.configuration.Save();
-                        }                
+                        if (ImGui.Checkbox("Quantity", ref amount)) 
+                            check = true;           
                 
                         var date = this.configuration.Date;
-                        if (ImGui.Checkbox("Purchase Time", ref date))
+                        if (ImGui.Checkbox("Purchase Time", ref date)) 
+                            check = true;
+
+                        if (check)
                         {
+                            this.configuration.Buyer = buyer;
+                            this.configuration.Price = price;
+                            this.configuration.Amount = amount;
                             this.configuration.Date = date;
                             this.configuration.Save();
+                            
+                            this.configuration.GenerateOptions();
+                            this._historyList.Update();
                         }
                         
                         ImGui.EndTabItem();
