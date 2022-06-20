@@ -31,7 +31,7 @@ namespace MBHistory
         private ClientState clientState;
         
         private readonly PluginCommandManager<Plugin> commandManager;
-        public HistoryList HistoryList;
+        private readonly HistoryList HistoryList;
         
         public Plugin(
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
@@ -60,23 +60,22 @@ namespace MBHistory
         [HelpMessage("Toggles UI\nArguments:\non - Turns on\noff - Turns off\nconfig - Opens config")]
         public void PluginCommand(string command, string args)
         {
-            if (args == "on")
+            switch (args)
             {
-                Configuration.On = true;
-                Configuration.Save();
-            } 
-            else if (args == "off")
-            {
-                Configuration.On = false;
-                Configuration.Save();
-            }            
-            else if (args == "config")
-            {
-                this.PluginUi.SettingsVisible = true;
-            }
-            else
-            {
-                this.PluginUi.Visible = true;
+                case "on":
+                    Configuration.On = true;
+                    Configuration.Save();
+                    break;
+                case "off":
+                    Configuration.On = false;
+                    Configuration.Save();
+                    break;
+                case "config":
+                    this.PluginUi.SettingsVisible = true;
+                    break;
+                default:
+                    this.PluginUi.Visible = true;
+                    break;
             }
         }
         
