@@ -8,7 +8,6 @@ using Dalamud.Game.Network;
 using Dalamud.Game.ClientState;
 using ImGuiNET;
 using System;
-using System.Linq;
 using Dalamud.Logging;
 using Num = System.Numerics;
 using MBHistory.Attributes;
@@ -88,19 +87,14 @@ namespace MBHistory
         
         private void OnNetworkEvent(IntPtr dataPtr, ushort opCode, uint sourceActorId, uint targetActorId, NetworkMessageDirection direction)
         {
+            if (!Configuration.On) return;
             if (direction != NetworkMessageDirection.ZoneDown) return;
             if (!Data.IsDataReady) return;
-            if (Configuration.VerboseChatlog) PluginLog.Debug($"History: Opcode {opCode}");
+            if (Configuration.VerboseChatlog) PluginLog.Debug($"Opcode {opCode}");
             if (opCode != Data.ServerOpCodes["MarketBoardHistory"]) return;
-            if (!Configuration.On) return;
-            if (clientState?.LocalPlayer == null)
-            {
-                TurnOff();
-                Chat.PrintError("History: Unable to fetch character name.");
-                return;
-            }
+            if (clientState?.LocalPlayer == null) return;
             
-            if (Configuration.VerboseChatlog) PluginLog.Debug("History: MarketBoardHistory Event fired.");
+            if (Configuration.VerboseChatlog) PluginLog.Debug("MarketBoardHistory Event fired.");
 
             var playerName = clientState.LocalPlayer.Name.ToString();
             var listing = MarketBoardHistory.Read(dataPtr);
@@ -114,12 +108,6 @@ namespace MBHistory
             HistoryList.Update();
             if (Configuration.Chatlog) Chat.Print("History: Copied clipboard.");
             ImGui.SetClipboardText(HistoryList.GetClipboardString());
-        }
-
-        private void TurnOff()
-        {
-            Configuration.On = false;
-            Configuration.Save();
         }
 
         private void DrawUI()
