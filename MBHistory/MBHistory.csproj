@@ -3,8 +3,8 @@
   <PropertyGroup>
     <Authors>Infi</Authors>
     <AssemblyName>MBHistory</AssemblyName>
-    <AssemblyVersion>0.0.3.0</AssemblyVersion>
-    <Version>0.0.3.0</Version>
+    <AssemblyVersion>0.0.3.1</AssemblyVersion>
+    <Version>0.0.3.1</Version>
     <Description>Copies the marketboard transaction history into your clipboard with configurable options.</Description>
     <PackageProjectUrl>https://github.com/Infiziert90/MBHistory</PackageProjectUrl>
   </PropertyGroup>
