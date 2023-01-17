@@ -3,14 +3,14 @@
   <PropertyGroup>
     <Authors>Infi</Authors>
     <AssemblyName>MBHistory</AssemblyName>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <Version>1.0.0.0</Version>
+    <AssemblyVersion>1.0.0.1</AssemblyVersion>
+    <Version>1.0.0.1</Version>
     <Description>Copies the marketboard transaction history into your clipboard with configurable options.</Description>
     <PackageProjectUrl>https://github.com/Infiziert90/MBHistory</PackageProjectUrl>
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net7.0-windows</TargetFramework>
     <Platforms>x64</Platforms>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
@@ -36,7 +36,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DalamudPackager" Version="2.1.8" />
+    <PackageReference Include="DalamudPackager" Version="2.1.10" />
     <PackageReference Include="ILRepack" Version="2.1.0-beta1" />
     <Reference Include="FFXIVClientStructs">
       <HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>
