@@ -4,17 +4,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Dalamud.Plugin.Services;
 using static Dalamud.Game.Command.CommandInfo;
 
 namespace MBHistory
 {
     public class PluginCommandManager<THost> : IDisposable
     {
-        private readonly CommandManager commandManager;
+        private readonly ICommandManager commandManager;
         private readonly (string, CommandInfo)[] pluginCommands;
         private readonly THost host;
 
-        public PluginCommandManager(THost host, CommandManager commandManager)
+        public PluginCommandManager(THost host, ICommandManager commandManager)
         {
             this.commandManager = commandManager;
             this.host = host;
@@ -26,7 +27,7 @@ namespace MBHistory
 
             AddCommandHandlers();
         }
-        
+
         private void AddCommandHandlers()
         {
             foreach (var (command, commandInfo) in this.pluginCommands)

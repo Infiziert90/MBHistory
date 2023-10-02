@@ -1,14 +1,10 @@
-﻿using Dalamud.Game.Command;
-using Dalamud.IoC;
+﻿using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Game.Network.Structures;
-using Dalamud.Data;
-using Dalamud.Game.Gui;
 using Dalamud.Game.Network;
-using Dalamud.Game.ClientState;
 using ImGuiNET;
 using System;
-using Dalamud.Logging;
+using Dalamud.Plugin.Services;
 using Num = System.Numerics;
 using MBHistory.Attributes;
 using MBHistory.Data;
@@ -18,43 +14,37 @@ namespace MBHistory
 {
     public sealed class Plugin : IDalamudPlugin
     {
-        [PluginService] public static DataManager Data { get; private set; } = null!;
-        [PluginService] public static GameNetwork GameNetwork { get; private set; } = null!;
-        [PluginService] public static ChatGui Chat { get; private set; } = null!;
-        
-        public string Name => "Easy MBHistory";
+        [PluginService] public static DalamudPluginInterface PluginInterface { get; private set; } = null!;
+        [PluginService] public static IDataManager Data { get; private set; } = null!;
+        [PluginService] public static IGameNetwork GameNetwork { get; private set; } = null!;
+        [PluginService] public static IChatGui Chat { get; private set; } = null!;
+        [PluginService] public static IClientState ClientState { get; private set; } = null!;
+        [PluginService] public static IPluginLog Log { get; private set; } = null!;
+        [PluginService] public static ICommandManager Commands { get; private set; } = null!;
 
-        private DalamudPluginInterface PluginInterface { get; init; }
         private Configuration Configuration { get; init; }
         private PluginUI PluginUi { get; init; }
-        private ClientState clientState;
-        
-        private readonly PluginCommandManager<Plugin> commandManager;
-        private readonly HistoryList HistoryList;
-        
-        public Plugin(
-            [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
-            [RequiredVersion("1.0")] CommandManager commands,
-            [RequiredVersion("1.0")] ClientState clientState)
-        {
-            this.PluginInterface = pluginInterface;
-            this.clientState = clientState;
-            
-            this.Configuration = this.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-            this.Configuration.Initialize(this.PluginInterface);
-            
-            this.HistoryList = new HistoryList(this.Configuration);
-            
-            this.PluginUi = new PluginUI(this.Configuration, HistoryList);
-            
-            GameNetwork.NetworkMessage += OnNetworkEvent;
-            
-            this.commandManager = new PluginCommandManager<Plugin>(this, commands);
 
-            this.PluginInterface.UiBuilder.Draw += DrawUI;
-            this.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
+        private readonly PluginCommandManager<Plugin> CommandManager;
+        private readonly HistoryList HistoryList;
+
+        public Plugin()
+        {
+            Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+            Configuration.Initialize(PluginInterface);
+
+            HistoryList = new HistoryList(Configuration);
+
+            PluginUi = new PluginUI(Configuration, HistoryList);
+
+            GameNetwork.NetworkMessage += OnNetworkEvent;
+
+            CommandManager = new PluginCommandManager<Plugin>(this, Commands);
+
+            PluginInterface.UiBuilder.Draw += DrawUI;
+            PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
         }
-        
+
         [Command("/history")]
         [HelpMessage("Toggles UI\nArguments:\non - Turns on\noff - Turns off\nconfig - Opens config")]
         public void PluginCommand(string command, string args)
@@ -70,43 +60,46 @@ namespace MBHistory
                     Configuration.Save();
                     break;
                 case "config":
-                    this.PluginUi.SettingsVisible = true;
+                    PluginUi.SettingsVisible = true;
                     break;
                 default:
-                    this.PluginUi.Visible = true;
+                    PluginUi.Visible = true;
                     break;
             }
         }
-        
+
         public void Dispose()
         {
             GameNetwork.NetworkMessage -= OnNetworkEvent;
-            this.PluginUi.Dispose();
-            this.commandManager.Dispose();
+            PluginUi.Dispose();
+            CommandManager.Dispose();
         }
-        
+
+        private const ushort OPCODE = 0x0;
         private void OnNetworkEvent(IntPtr dataPtr, ushort opCode, uint sourceActorId, uint targetActorId, NetworkMessageDirection direction)
         {
-            if (!Configuration.On) return;
-            if (direction != NetworkMessageDirection.ZoneDown) return;
-            if (!Data.IsDataReady) return;
-            if (Configuration.VerboseChatlog) PluginLog.Debug($"Opcode {opCode}");
-            if (opCode != Data.ServerOpCodes["MarketBoardHistory"]) return;
-            if (clientState?.LocalPlayer == null) return;
-            
-            if (Configuration.VerboseChatlog) PluginLog.Debug("MarketBoardHistory Event fired.");
+            if (!Configuration.On)
+                return;
 
-            var playerName = clientState.LocalPlayer.Name.ToString();
+            if (opCode != OPCODE)
+                return;
+
+            if (ClientState.LocalPlayer == null)
+                return;
+
+            var playerName = ClientState.LocalPlayer.Name.ToString();
             var listing = MarketBoardHistory.Read(dataPtr);
             HistoryList.ResetAndUpdate(playerName);
             foreach (var item in listing.HistoryListings)
-            {
                 HistoryList.Append(item);
-            }
 
-            if (!HistoryList.HasItems()) return;
+            if (!HistoryList.Any())
+                return;
+
             HistoryList.Update();
-            if (Configuration.Chatlog) Chat.Print("History: Copied clipboard.");
+            if (Configuration.Chatlog)
+                Chat.Print("History: Copied clipboard.");
+
             ImGui.SetClipboardText(HistoryList.GetClipboardString());
         }
 
