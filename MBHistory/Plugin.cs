@@ -75,13 +75,13 @@ namespace MBHistory
             CommandManager.Dispose();
         }
 
-        private const ushort OPCODE = 0x0;
+        private const ushort Opcode = 0x39f;
         private void OnNetworkEvent(IntPtr dataPtr, ushort opCode, uint sourceActorId, uint targetActorId, NetworkMessageDirection direction)
         {
             if (!Configuration.On)
                 return;
 
-            if (opCode != OPCODE)
+            if (opCode != Opcode)
                 return;
 
             if (ClientState.LocalPlayer == null)
