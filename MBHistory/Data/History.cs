@@ -20,13 +20,13 @@ public class History
 
     public History(string name, uint price, uint quantity, DateTime date, Configuration config)
     {
-        this.Name = name;
-        this.Price = price;
-        this.Quantity = quantity;
-        this.Date = date;
+        Name = name;
+        Price = price;
+        Quantity = quantity;
+        Date = date;
 
         this.config = config;
-        this.GenerateString();
+        GenerateString();
     }
 
     public void UpdateUsed(bool used)
@@ -39,7 +39,7 @@ public class History
         if (config.Separator == "" || config.IncludeOptions == IncludeOption.None) return;
 
         // remove last separator
-        var tmp = string.Join("", this.GenerateStringList().ToArray());
+        var tmp = string.Join("", GenerateStringList().ToArray());
         if (tmp.EndsWith(config.Separator)) tmp = tmp.Remove(tmp.Length - 1);
 
         GeneratedString = tmp;
@@ -47,14 +47,15 @@ public class History
 
     private IEnumerable<string> GenerateStringList()
     {
-        if (!this.IsUsed) return Enumerable.Empty<string>();
+        if (!IsUsed)
+            return [];
 
         return IncludeOptions.GetFlags(config.IncludeOptions).Select(option => option switch
         {
-            IncludeOption.Name => $"{this.Name}{config.Separator}",
-            IncludeOption.Price => $"{this.Price}{config.Separator}",
-            IncludeOption.Quantity => $"{this.Quantity}{config.Separator}",
-            IncludeOption.Date => $"{this.Date:yyyy-MM-dd h:mm}{config.Separator}",
+            IncludeOption.Name => $"{Name}{config.Separator}",
+            IncludeOption.Price => $"{Price}{config.Separator}",
+            IncludeOption.Quantity => $"{Quantity}{config.Separator}",
+            IncludeOption.Date => $"{Date:yyyy-MM-dd h:mm}{config.Separator}",
             _ => ""
         });
     }
@@ -68,19 +69,19 @@ public class HistoryList
 
     public HistoryList(Configuration config)
     {
-        this.HistoryObjects = new List<History>();
+        HistoryObjects = new List<History>();
         this.config = config;
     }
 
     public void ResetAndUpdate(string playerName)
     {
-        this.PlayerName = playerName;
+        PlayerName = playerName;
         HistoryObjects.Clear();
     }
 
     public void Append(MarketBoardHistory.MarketBoardHistoryListing h)
     {
-        this.HistoryObjects.Add(new History(h.BuyerName, h.SalePrice, h.Quantity, h.PurchaseTime, config));
+        HistoryObjects.Add(new History(h.BuyerName, h.SalePrice, h.Quantity, h.PurchaseTime, config));
     }
 
     public void Update()
@@ -88,8 +89,8 @@ public class HistoryList
         if (!Any())
             return;
 
-        this.UpdateIsUsed();
-        this.HistoryObjects.ForEach(t => t.GenerateString());
+        UpdateIsUsed();
+        HistoryObjects.ForEach(t => t.GenerateString());
     }
 
     private void UpdateIsUsed()
@@ -99,7 +100,7 @@ public class HistoryList
             if (i >= config.NumberToCheck)
                 item.UpdateUsed(false);
             else
-                item.UpdateUsed(!config.OnlySelf || item.Name == this.PlayerName);
+                item.UpdateUsed(!config.OnlySelf || item.Name == PlayerName);
         }
     }
 
@@ -110,7 +111,7 @@ public class HistoryList
 
     public string GetClipboardString()
     {
-        return string.Join("\n", this.HistoryObjects.Select(item => item.GeneratedString).Where(item => item != "").ToArray());
+        return string.Join("\n", HistoryObjects.Select(item => item.GeneratedString).Where(item => item != "").ToArray());
     }
 
     public IEnumerable<Enum> GetOptionsIterator()

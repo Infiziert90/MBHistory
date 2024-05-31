@@ -20,7 +20,7 @@ namespace MBHistory
             this.commandManager = commandManager;
             this.host = host;
 
-            this.pluginCommands = host.GetType().GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance)
+            pluginCommands = host.GetType().GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance)
                 .Where(method => method.GetCustomAttribute<CommandAttribute>() != null)
                 .SelectMany(GetCommandInfoTuple)
                 .ToArray();
@@ -30,23 +30,23 @@ namespace MBHistory
 
         private void AddCommandHandlers()
         {
-            foreach (var (command, commandInfo) in this.pluginCommands)
+            foreach (var (command, commandInfo) in pluginCommands)
             {
-                this.commandManager.AddHandler(command, commandInfo);
+                commandManager.AddHandler(command, commandInfo);
             }
         }
 
         private void RemoveCommandHandlers()
         {
-            foreach (var (command, _) in this.pluginCommands)
+            foreach (var (command, _) in pluginCommands)
             {
-                this.commandManager.RemoveHandler(command);
+                commandManager.RemoveHandler(command);
             }
         }
 
         private IEnumerable<(string, CommandInfo)> GetCommandInfoTuple(MethodInfo method)
         {
-            var handlerDelegate = (HandlerDelegate)Delegate.CreateDelegate(typeof(HandlerDelegate), this.host, method);
+            var handlerDelegate = (HandlerDelegate)Delegate.CreateDelegate(typeof(HandlerDelegate), host, method);
 
             var command = handlerDelegate.Method.GetCustomAttribute<CommandAttribute>();
             var aliases = handlerDelegate.Method.GetCustomAttribute<AliasesAttribute>();
