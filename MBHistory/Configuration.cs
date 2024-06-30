@@ -1,5 +1,4 @@
 ﻿using Dalamud.Configuration;
-using Dalamud.Plugin;
 using System;
 using MBHistory.Data;
 
@@ -21,11 +20,6 @@ namespace MBHistory
         public bool Price { get; set; } = true;
         public bool Amount { get; set; } = true;
         public bool Date { get; set; } = true;
-
-        // the below exist just to make saving less cumbersome
-
-        [NonSerialized]
-        private DalamudPluginInterface? pluginInterface;
 
         [NonSerialized]
         public IncludeOption IncludeOptions = IncludeOption.None;
@@ -52,15 +46,14 @@ namespace MBHistory
             };
         }
 
-        public void Initialize(DalamudPluginInterface pluginInterface)
+        public void Initialize()
         {
-            this.pluginInterface = pluginInterface;
             GenerateOptions();
         }
 
         public void Save()
         {
-            pluginInterface!.SavePluginConfig(this);
+            Plugin.PluginInterface.SavePluginConfig(this);
         }
     }
 }

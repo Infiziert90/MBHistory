@@ -79,7 +79,7 @@ public class HistoryList
         HistoryObjects.Clear();
     }
 
-    public void Append(MarketBoardHistory.MarketBoardHistoryListing h)
+    public void Append(IMarketBoardHistoryListing h)
     {
         HistoryObjects.Add(new History(h.BuyerName, h.SalePrice, h.Quantity, h.PurchaseTime, config));
     }
