@@ -1,7 +1,6 @@
 using System;
 using System.Numerics;
 using Dalamud.Interface.Colors;
-using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
@@ -31,14 +30,15 @@ public class MainWindow : Window, IDisposable
         if (ImGui.Button("Show Settings"))
             Plugin.ConfigWindow.Toggle();
 
-        ImGui.SameLine(ImGui.GetContentRegionMax().X - (118.0f * ImGuiHelpers.GlobalScale));
+        var textWidth = ImGui.CalcTextSize("Copy to clipboard").X;
+        ImGui.SameLine(ImGui.GetContentRegionMax().X - (textWidth + ImGui.GetStyle().FramePadding.X * 2));
 
         if (ImGui.Button("Copy to clipboard"))
             ImGui.SetClipboardText(Plugin.HistoryList.GetClipboardString());
 
         ImGui.Spacing();
 
-        ImGui.Text("Current selection:");
+        ImGui.TextUnformatted("Current selection:");
         if (!Plugin.Configuration.HasOptions)
             ImGui.TextColored(ImGuiColors.DPSRed, "Please select include options.");
         else
@@ -52,7 +52,7 @@ public class MainWindow : Window, IDisposable
             return;
 
         foreach (var name in Plugin.HistoryList.IncludeOptionNames())
-            ImGui.TableSetupColumn($"{name}", ImGuiTableColumnFlags.None,  name == "Name" ? 0.45f : 0.25f);
+            ImGui.TableSetupColumn($"{name}", ImGuiTableColumnFlags.WidthStretch,  name == "Name" ? 0.45f : 0.25f);
 
         ImGui.TableHeadersRow();
         foreach (var item in Plugin.HistoryList.HistoryObjects)
@@ -66,16 +66,16 @@ public class MainWindow : Window, IDisposable
                 switch (option)
                 {
                     case IncludeOption.Name:
-                        ImGui.Text($"{item.Name}");
+                        ImGui.TextUnformatted($"{item.Name}");
                         break;
                     case IncludeOption.Price:
-                        ImGui.Text($"{item.Price:N0}");
+                        ImGui.TextUnformatted($"{item.Price:N0}");
                         break;
                     case IncludeOption.Quantity:
-                        ImGui.Text($"{item.Quantity}");
+                        ImGui.TextUnformatted($"{item.Quantity}");
                         break;
                     case IncludeOption.Date:
-                        ImGui.Text($"{item.Date.ToLocalTime():g}");
+                        ImGui.TextUnformatted($"{item.Date.ToLocalTime():g}");
                         break;
                 }
             }

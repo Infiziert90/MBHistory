@@ -8,6 +8,7 @@ using Dalamud.Plugin.Services;
 using MBHistory.Attributes;
 using MBHistory.Data;
 using MBHistory.Windows;
+using MBHistory.Windows.Config;
 
 
 namespace MBHistory
@@ -45,8 +46,9 @@ namespace MBHistory
 
             CommandManager = new PluginCommandManager<Plugin>(this, Commands);
 
-            PluginInterface.UiBuilder.Draw += DrawUI;
-            PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
+            PluginInterface.UiBuilder.Draw += DrawUi;
+            PluginInterface.UiBuilder.OpenMainUi += DrawMainUi;
+            PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUi;
 
             MarketBoard.HistoryReceived += MarketHistory;
         }
@@ -111,12 +113,17 @@ namespace MBHistory
             }
         }
 
-        private void DrawUI()
+        private void DrawUi()
         {
             WindowSystem.Draw();
         }
 
-        private void DrawConfigUI()
+        private void DrawMainUi()
+        {
+            MainWindow.Toggle();
+        }
+
+        private void DrawConfigUi()
         {
             ConfigWindow.Toggle();
         }
